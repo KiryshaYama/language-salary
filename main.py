@@ -93,7 +93,7 @@ def parse_sj(languages, app_key_sj):
 
 
 def print_table(statistic, title):
-    TABLE_DATA = [
+    table_data = [
         ['Язык программирования',
          'Вакансий найдено',
          'Вакансий обработано',
@@ -101,13 +101,13 @@ def print_table(statistic, title):
     ]
 
     for language in statistic:
-        TABLE_DATA.append([
+        table_data.append([
             language,
             statistic[language]['vacancies_found'],
             statistic[language]['vacancies_processed'],
             statistic[language]['average_salary']
         ])
-    table_instance = SingleTable(TABLE_DATA, title)
+    table_instance = SingleTable(table_data, title)
     print(table_instance.table)
     print()
 
