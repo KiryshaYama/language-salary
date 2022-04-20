@@ -7,14 +7,14 @@ from terminaltables import SingleTable
 
 
 def predict_salary(salary_from, salary_to):
-    if salary_from == 0 or salary_from is None:
-        return 0.8*salary_to
-    if salary_to == 0 or salary_to is None:
-        return 1.2 * salary_from
-    if salary_from and salary_to != 0:
-        return (salary_from + salary_to)/2
-    else:
+    if not salary_from and not salary_to:
         return None
+    if not salary_from:
+        return 0.8 * salary_to
+    if not salary_to:
+        return 1.2 * salary_from
+    if salary_from and salary_to:
+        return (salary_from + salary_to)/2
 
 
 def parse_hh(languages):
@@ -28,7 +28,7 @@ def parse_hh(languages):
     for language in languages:
         count = 0
         summary_salary = 0
-        params['text'] = 'Разработчик ' + language
+        params['text'] = f'Разработчик {language}'
         response = requests.get('https://api.hh.ru/vacancies', params=params)
         response.raise_for_status()
         first_page = json.loads(response.text)
@@ -39,7 +39,7 @@ def parse_hh(languages):
             response.raise_for_status()
             vacancies = json.loads(response.text)
             for vacancy in vacancies['items']:
-                if vacancy['salary'] is not None and \
+                if vacancy['salary'] and \
                         vacancy['salary']['currency'] == 'RUR':
                     summary_salary += predict_salary(vacancy['salary']['from'],
                                                      vacancy['salary']['to'])
@@ -129,11 +129,11 @@ def main():
         'Python'
     ]
     statistic_hh = parse_hh(languages)
-    statistic_sj = parse_sj(languages, app_key_sj)
+    #statistic_sj = parse_sj(languages, app_key_sj)
     title_hh = 'HeadHunter Moscow'
     title_sj = 'SuperJob Moscow'
     print_table(statistic_hh, title_hh)
-    print_table(statistic_sj, title_sj)
+    #print_table(statistic_sj, title_sj)
 
 if __name__ == '__main__':
     main()
