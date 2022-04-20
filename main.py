@@ -17,18 +17,6 @@ def predict_salary(salary_from, salary_to):
         return None
 
 
-def predict_rub_salary(vacancy):
-    if vacancy['currency'] == 'RUR':
-        if vacancy['from'] and vacancy['to'] is not None:
-            return (vacancy['from'] + vacancy['to'])/2
-        if vacancy['from'] is None:
-            return 0.8*vacancy['to']
-        if vacancy['to'] is None:
-            return 1.2 * vacancy['from']
-    else:
-        return None
-
-
 def parse_hh(languages):
     results_hh = {}
     params = {
