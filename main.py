@@ -70,7 +70,6 @@ def parse_sj(language, app_key_sj):
     )
     response.raise_for_status()
     first_page = response.json()
-    print(first_page['total'])
     if first_page['total']:
         for page in range(int((first_page['total']/params['count']+1))):
             params['page'] = page
