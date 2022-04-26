@@ -19,37 +19,37 @@ def parse_hh(language):
         'User-Agent': 'api-test-agent',
         'area': 1,
         'period': 30,
-        'per_page': 100
+        'per_page': 100,
+        'text': f'Разработчик {language}',
+        'page': 0
     }
     count = 0
     summary_salary = 0
-    params['text'] = f'Разработчик {language}'
-    response = requests.get('https://api.hh.ru/vacancies', params=params)
-    response.raise_for_status()
-    first_page = response.json()
-    if first_page['found']:
-        for page in range(first_page['pages']):
-            params['page'] = page
-            response = requests.get(
-                'https://api.hh.ru/vacancies',
-                params=params
-            )
-            response.raise_for_status()
-            vacancies = response.json()
-            for vacancy in vacancies['items']:
-                if vacancy['salary'] and \
-                        vacancy['salary']['currency'] == 'RUR':
-                    summary_salary += predict_salary(
-                        vacancy['salary']['from'],
-                        vacancy['salary']['to']
-                    )
-                    count += 1
+    while True:
+        response = requests.get(
+            'https://api.hh.ru/vacancies',
+            params=params
+        )
+        response.raise_for_status()
+        vacancies = response.json()
+        for vacancy in vacancies['items']:
+            if vacancy['salary'] and \
+                    vacancy['salary']['currency'] == 'RUR':
+                summary_salary += predict_salary(
+                    vacancy['salary']['from'],
+                    vacancy['salary']['to']
+                )
+                count += 1
+        params['page'] += 1
+        if params['page'] >= vacancies['pages']:
+            break
+    if vacancies['found']:
         result_hh = {
-            'vacancies_found': first_page['found'],
+            'vacancies_found': vacancies['found'],
             'vacancies_processed': count,
             'average_salary': int(summary_salary / count)
         }
-    return result_hh
+        return result_hh
 
 
 def parse_sj(language, app_key_sj):
@@ -57,40 +57,37 @@ def parse_sj(language, app_key_sj):
         'count': 100,
         'town': 4,
         'catalogues': 48,
-        'app_key': app_key_sj
+        'app_key': app_key_sj,
+        'keyword': language,
+        'page': 0
     }
     count = 0
     summary_salary = 0
-    params['keyword'] = language
-    response = requests.get(
-        'https://api.superjob.ru/2.0/vacancies/',
-        params=params
-    )
-    response.raise_for_status()
-    first_page = response.json()
-    if first_page['total']:
-        for page in range(int((first_page['total']/params['count']+1))):
-            params['page'] = page
-            response = requests.get(
-                'https://api.superjob.ru/2.0/vacancies/',
-                params=params
-            )
-            response.raise_for_status()
-            vacancies = response.json()
-            for vacancy in vacancies['objects']:
-                if vacancy['payment_from'] or vacancy['payment_to'] != 0 and \
-                            vacancy['currency'] == 'rub':
-                    summary_salary += predict_salary(
-                        vacancy['payment_from'],
-                        vacancy['payment_to']
-                    )
-                    count += 1
+    while True:
+        response = requests.get(
+            'https://api.superjob.ru/2.0/vacancies/',
+            params=params
+        )
+        response.raise_for_status()
+        vacancies = response.json()
+        for vacancy in vacancies['objects']:
+            if vacancy['payment_from'] or vacancy['payment_to'] != 0 and \
+                        vacancy['currency'] == 'rub':
+                summary_salary += predict_salary(
+                    vacancy['payment_from'],
+                    vacancy['payment_to']
+                )
+                count += 1
+        params['page'] += 1
+        if params['page'] > int((vacancies['total']/params['count']+1)):
+            break
+    if vacancies['total']:
         result_sj = {
-            'vacancies_found': first_page['total'],
+            'vacancies_found': vacancies['total'],
             'vacancies_processed': count,
             'average_salary': int(summary_salary / count)
         }
-    return result_sj
+        return result_sj
 
 
 def print_table(statistic, title):
@@ -102,12 +99,13 @@ def print_table(statistic, title):
     ]
 
     for language in statistic:
-        table_data.append([
-            language,
-            statistic[language]['vacancies_found'],
-            statistic[language]['vacancies_processed'],
-            statistic[language]['average_salary']
-        ])
+        if statistic[language]:
+            table_data.append([
+                language,
+                statistic[language]['vacancies_found'],
+                statistic[language]['vacancies_processed'],
+                statistic[language]['average_salary']
+            ])
     table_instance = SingleTable(table_data, title)
     print(table_instance.table)
     print()
@@ -136,11 +134,11 @@ def main():
     for language in languages:
         statistic_hh[language] = parse_hh(language)
         statistic_sj[language] = parse_sj(language, app_key_sj)
-    title_hh = 'HeadHunter Moscow'
-    title_sj = 'SuperJob Moscow'
     if statistic_hh:
+        title_hh = 'HeadHunter Moscow'
         print_table(statistic_hh, title_hh)
     if statistic_sj:
+        title_sj = 'SuperJob Moscow'
         print_table(statistic_sj, title_sj)
 
 if __name__ == '__main__':
